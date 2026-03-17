@@ -18,7 +18,7 @@ class WxStore:
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS weather_zips (
-                user_id INTEGER PRIMARY KEY,
+                channel_id INTEGER PRIMARY KEY,
                 zip TEXT NOT NULL
             )
             """
@@ -28,7 +28,7 @@ class WxStore:
             """
             CREATE TABLE IF NOT EXISTS weather_subs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
+                channel_id INTEGER NOT NULL,
                 zip TEXT NOT NULL,
                 cadence TEXT NOT NULL,
                 hh INTEGER NOT NULL,
@@ -41,15 +41,15 @@ class WxStore:
             """
         )
         cur.execute("CREATE INDEX IF NOT EXISTS idx_weather_subs_next ON weather_subs(next_run_utc)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_weather_subs_user ON weather_subs(user_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_weather_subs_user ON weather_subs(channel_id)")
 
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS notes (
-                user_id INTEGER NOT NULL,
+                channel_id INTEGER NOT NULL,
                 key TEXT NOT NULL,
                 value TEXT NOT NULL,
-                PRIMARY KEY (user_id, key)
+                PRIMARY KEY (channel_id, key)
             )
             """
         )
@@ -68,17 +68,17 @@ class WxStore:
             # Best-effort: if migration fails, bot still runs with defaults
             pass
 
-    def get_user_zip(self, user_id: int) -> Optional[str]:
-        row = self.db.execute("SELECT zip FROM weather_zips WHERE user_id = ?", (int(user_id),)).fetchone()
+    def get_user_zip(self, channel_id: int) -> Optional[str]:
+        row = self.db.execute("SELECT zip FROM weather_zips WHERE channel_id = ?", (int(channel_id),)).fetchone()
         return row["zip"] if row else None
 
-    def set_user_zip(self, user_id: int, zip_code: str) -> None:
+    def set_user_zip(self, channel_id: int, zip_code: str) -> None:
         self.db.execute(
             """
-            INSERT INTO weather_zips(user_id, zip) VALUES (?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET zip = excluded.zip
+            INSERT INTO weather_zips(channel_id, zip) VALUES (?, ?)
+            ON CONFLICT(channel_id) DO UPDATE SET zip = excluded.zip
             """,
-            (int(user_id), str(zip_code)),
+            (int(channel_id), str(zip_code)),
         )
         self.db.commit()
 
@@ -86,11 +86,11 @@ class WxStore:
         cur = self.db.cursor()
         cur.execute(
             """
-            INSERT INTO weather_subs(user_id, zip, cadence, hh, mi, weekly_days, tz_name, units, next_run_utc)
+            INSERT INTO weather_subs(channel_id, zip, cadence, hh, mi, weekly_days, tz_name, units, next_run_utc)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                int(sub["user_id"]),
+                int(sub["channel_id"]),
                 str(sub["zip"]),
                 str(sub["cadence"]),
                 int(sub["hh"]),
@@ -104,12 +104,12 @@ class WxStore:
         self.db.commit()
         return int(cur.lastrowid)
 
-    def list_weather_subs(self, user_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """List subscriptions. If user_id is None, returns all subs."""
-        if user_id is None:
+    def list_weather_subs(self, channel_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        """List subscriptions. If channel_id is None, returns all subs."""
+        if channel_id is None:
             rows = self.db.execute(
                 """
-                SELECT id, user_id, zip, cadence, hh, mi, weekly_days, tz_name, units, next_run_utc
+                SELECT id, channel_id, zip, cadence, hh, mi, weekly_days, tz_name, units, next_run_utc
                 FROM weather_subs
                 ORDER BY next_run_utc ASC
                 """
@@ -118,12 +118,12 @@ class WxStore:
 
         rows = self.db.execute(
             """
-            SELECT id, user_id, zip, cadence, hh, mi, weekly_days, tz_name, units, next_run_utc
+            SELECT id, channel_id, zip, cadence, hh, mi, weekly_days, tz_name, units, next_run_utc
             FROM weather_subs
-            WHERE user_id = ?
+            WHERE channel_id = ?
             ORDER BY next_run_utc ASC
             """,
-            (int(user_id),),
+            (int(channel_id),),
         ).fetchall()
         return [dict(r) for r in rows]
 
@@ -131,7 +131,7 @@ class WxStore:
         """Remove a subscription by ID, only if it belongs to requester_id."""
         cur = self.db.cursor()
         cur.execute(
-            "DELETE FROM weather_subs WHERE id = ? AND user_id = ?",
+            "DELETE FROM weather_subs WHERE id = ? AND channel_id = ?",
             (int(sub_id), int(requester_id)),
         )
         self.db.commit()
@@ -141,20 +141,20 @@ class WxStore:
         self.db.execute("UPDATE weather_subs SET next_run_utc = ? WHERE id = ?", (str(next_run_utc), int(sub_id)))
         self.db.commit()
 
-    def get_note(self, user_id: int, key: str) -> Optional[str]:
+    def get_note(self, channel_id: int, key: str) -> Optional[str]:
         row = self.db.execute(
-            "SELECT value FROM notes WHERE user_id = ? AND key = ?",
-            (int(user_id), str(key)),
+            "SELECT value FROM notes WHERE channel_id = ? AND key = ?",
+            (int(channel_id), str(key)),
         ).fetchone()
         return row["value"] if row else None
 
-    def set_note(self, user_id: int, key: str, value: str) -> None:
+    def set_note(self, channel_id: int, key: str, value: str) -> None:
         self.db.execute(
             """
-            INSERT INTO notes(user_id, key, value) VALUES (?, ?, ?)
-            ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
+            INSERT INTO notes(channel_id, key, value) VALUES (?, ?, ?)
+            ON CONFLICT(channel_id, key) DO UPDATE SET value = excluded.value
             """,
-            (int(user_id), str(key), str(value)),
+            (int(channel_id), str(key), str(value)),
         )
         self.db.commit()
 
