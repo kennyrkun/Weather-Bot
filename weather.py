@@ -806,7 +806,7 @@ class Weather(commands.Cog):
                     due = datetime.fromisoformat(s["next_run_utc"]).replace(tzinfo=timezone.utc)
                     if due <= now_utc:
                         try:
-                            user = await self.bot.get_channel(int(s["channel_id"]))
+                            user = await self.bot.fetch_channel(int(s["channel_id"]))
                             city, state, lat, lon = await _zip_to_place_and_coords(session, s["zip"])
                             tz_name = (s.get("tz_name") or "").strip() or _get_user_tz_name(self.store, int(s["channel_id"]))
                             units = (s.get("units") or "").strip().lower() or _get_user_units(self.store, int(s["channel_id"]))
@@ -969,7 +969,7 @@ class Weather(commands.Cog):
                             if a.get("link"): tail += f"\nMore: {a['link']}"
                             emb.add_field(name=name, value=f"{body}{tail}", inline=False)
 
-                        user = await self.bot.get_channel(uid)
+                        user = await self.bot.fetch_channel(uid)
                         await user.send(embed=emb)
                         # mark seen
                         for a in fresh:
