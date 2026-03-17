@@ -868,6 +868,7 @@ class Weather(commands.Cog):
                         except Exception:
                             fallback = now_utc + timedelta(minutes=5)
                             self.store.update_weather_sub(s["id"], next_run_utc=fallback.isoformat())
+                            await self.bot.get_channel(s["channel_id"]).send(f"\u26A0\ufe0f Weather error: {e} {traceback.format_exc()}", ephemeral=True)
         except Exception:
             pass
 
