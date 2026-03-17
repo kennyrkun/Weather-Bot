@@ -897,9 +897,9 @@ class Weather(commands.Cog):
         if sev not in ("advisory", "watch", "warning"):
             sev = "watch"
 
-        self.store.set_note(inter.user.id, "wx_alerts_enabled", "1")
-        self.store.set_note(inter.user.id, "wx_alerts_zip", z)
-        self.store.set_note(inter.user.id, "wx_alerts_min_sev", sev)
+        self.store.set_note(inter.channel_id, "wx_alerts_enabled", "1")
+        self.store.set_note(inter.channel_id, "wx_alerts_zip", z)
+        self.store.set_note(inter.channel_id, "wx_alerts_min_sev", sev)
         await inter.response.send_message(f"\U0001F514 Alerts **ON** for **{z}** (min severity: **{sev}**).", ephemeral=True)
 
     # -------- Schedulers --------
@@ -1079,7 +1079,7 @@ class Weather(commands.Cog):
                             if a.get("link"): tail += f"\nMore: {a['link']}"
                             emb.add_field(name=name, value=f"{body}{tail}", inline=False)
 
-                        user = await self.bot.fetch_user(uid)
+                        user = await self.bot.fetch_channel(uid)
                         await user.send(embed=emb)
                         # mark seen
                         for a in fresh:
