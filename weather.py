@@ -1,10 +1,10 @@
-
 import os
 import re
 import html
 import json
 import aiohttp
 import asyncio
+import traceback
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List, Tuple
 
@@ -489,7 +489,7 @@ class Weather(commands.Cog):
             emb.set_footer(text=f"Units: {units} • Timezone: {tz_name}")
             await inter.followup.send(embed=emb)
         except Exception as e:
-            await inter.followup.send(f"\u26A0\ufe0f Weather error: {e}", ephemeral=True)
+            await inter.followup.send(f"\u26A0\ufe0f Weather error: {e} {traceback.format_exc()}", ephemeral=True)
 
     # ---- User settings ----
     UNITS_CHOICES = [
@@ -643,7 +643,7 @@ class Weather(commands.Cog):
             _add_chunked_fields(emb, "Forecast", lines[:want_hours])
             await inter.followup.send(embed=emb)
         except Exception as e:
-            await inter.followup.send(f"\u26A0\ufe0f Hourly error: {e}", ephemeral=True)
+            await inter.followup.send(f"\u26A0\ufe0f Hourly error: {e} {traceback.format_exc()}", ephemeral=True)
 
     @app_commands.command(name="weather_set_zip", description="Set your default ZIP code for weather features.")
     async def weather_set_zip(self, inter: discord.Interaction, zip: app_commands.Range[str, 5, 10]):
@@ -704,7 +704,7 @@ class Weather(commands.Cog):
                 ephemeral=True
             )
         except Exception as e:
-            await inter.followup.send(f"\u26A0\ufe0f {type(e).__name__}: {e}", ephemeral=True)
+            await inter.followup.send(f"\u26A0\ufe0f {type(e).__name__}: {e} {traceback.format_exc()}", ephemeral=True)
 
     @app_commands.command(name="weather_subscriptions", description="List your weather subscriptions and next send time.")
     async def weather_subscriptions(self, inter: discord.Interaction):
