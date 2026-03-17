@@ -865,12 +865,12 @@ class Weather(commands.Cog):
                                 else:
                                     next_local += timedelta(days=7)
                                 self.store.update_weather_sub(s["id"], channel_id=int(s["channel_id"]), next_run_utc=next_local.astimezone(timezone.utc).isoformat())
-                        except Exception:
+                        except Exception as e:
                             fallback = now_utc + timedelta(minutes=5)
                             self.store.update_weather_sub(s["id"], next_run_utc=fallback.isoformat())
-                            await self.bot.get_channel(s["channel_id"]).send(f"\u26A0\ufe0f Weather error: {e} {traceback.format_exc()}", ephemeral=True)
-        except Exception:
-            pass
+                            await self.bot.get_channel(s["channel_id"]).send(f"\u26A0\ufe0f Weather error: {e} {traceback.format_exc()}")
+        except Exception as e:
+            await self.bot.get_channel(1468253598646534294).send(f"\u26A0\ufe0f Subscription error: {e} {traceback.format_exc()}")
 
     @weather_scheduler.before_loop
     async def before_weather(self):
